@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Wuthering Heights 룰렛</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #f0f2f5; padding: 20px; }
+        .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; position: relative; width: 450px; }
+        #capture-area { background: white; padding: 10px; border-radius: 15px; }
+        .roulette-wrapper { position: relative; width: 412px; margin: 10px auto; }
+        .pin {
+            width: 0; height: 0;
+            border-left: 15px solid transparent; border-right: 15px solid transparent;
+            border-top: 30px solid #e74c3c;
+            position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
+            z-index: 10; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+        }
+        #canvas { border: 6px solid #333; border-radius: 50%; cursor: pointer; background: white; }
+        .input-group { margin-bottom: 20px; font-size: 1.2rem; }
+        input { padding: 10px; font-size: 1.2rem; width: 140px; border: 2px solid #ddd; border-radius: 8px; text-align: right; }
+        .btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+        button { padding: 15px 30px; font-size: 1.1rem; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        #startBtn { background-color: #e67e22; color: white; flex: 2; }
+        #copyBtn { background-color: #3498db; color: white; flex: 1; display: none; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .result { margin-top: 20px; padding: 20px; border-radius: 12px; background: #1a1a1a; color: white; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+        .win { color: #00d2ff; font-size: 1.8rem; font-weight: bold; }
+        .loss { color: #ff5252; font-size: 1.8rem; font-weight: bold; }
+        .small-text { font-size: 0.9rem; color: #888; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>룰렛</h2>
+    <div class="input-group">
+        베팅 G: <input type="number" id="inputG" value="0"> <strong>G</strong>
+    </div>
+    <div id="capture-area">
+        <div class="roulette-wrapper">
+            <div class="pin"></div>
+            <canvas id="canvas" width="400" height="400" onclick="stopSpin()"></canvas>
+        </div>
+        <div class="result" id="resultArea">
+            <span class="small-text">준비 완료</span>
+            시작 후 원판을 클릭해 멈추세요!
+        </div>
+    </div>
+    <div class="btn-group">
+        <button id="startBtn" onclick="startSpin()">회전 시작!</button>
+        <button id="copyBtn" onclick="copyResult()">결과 복사</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const resultArea = document.getElementById('resultArea');
+    const startBtn = document.getElementById('startBtn');
+    const copyBtn = document.getElementById('copyBtn');
+
+    // -10배 다시 추가 (확률 조정)
+    const data = [
+        { val: -10, prob: 5, color: "#222" },
+        { val: -5, prob: 12, color: "#FF6B6B" },
+        { val: -2, prob: 15, color: "#FF9F43" },
+        { val: -1, prob: 18, color: "#FEEAA1" },
+        { val: 0, prob: 10, color: "#DCDDE1" },
+        { val: 1, prob: 23, color: "#26DE81" },
+        { val: 2, prob: 10, color: "#45AAF2" },
+        { val: 5, prob: 5, color: "#A55EEA" },
+        { val: 10, prob: 2, color: "#2BCBBA" }
+    ];
+
+    let currentAngle = 0;
+    let isSpinning = false;
+    let requestAni;
+    let spinSpeed = 0;
+
+    function draw() {
+        ctx.clearRect(0, 0, 400, 400);
+        let startAngle = currentAngle;
+        data.forEach(item => {
+            const sliceAngle = (item.prob / 100) * 2 * Math.PI;
+            ctx.beginPath();
+            ctx.fillStyle = item.color;
+            ctx.moveTo(200, 200);
+            ctx.arc(200, 200, 198, startAngle, startAngle + sliceAngle);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(0,0,0,0.1)";
+            ctx.stroke();
+            ctx.save();
+            ctx.translate(200, 200);
+            ctx.rotate(startAngle + sliceAngle/2);
+            ctx.textAlign = "right";
+            ctx.fillStyle = (item.val === -1 || item.val === 0 || item.val === 1) ? "#333" : "#fff";
+            ctx.font = "bold 18px Arial";
+            ctx.fillText(item.val + "x", 185, 6);
+            ctx.restore();
+            startAngle += sliceAngle;
+        });
+    }
+
+    function rotate() {
+        currentAngle += spinSpeed;
+        draw();
+        requestAni = requestAnimationFrame(rotate);
+    }
+
+    function startSpin() {
+        if (isSpinning) return;
+        isSpinning = true;
+        startBtn.disabled = true;
+        copyBtn.style.display = "none";
+        resultArea.innerHTML = '<span class="small-text">회전 중...</span>원판을 클릭하세요!';
+        
+        spinSpeed = 0.7 + Math.random() * 0.3; 
+        rotate();
+    }
+
+    function stopSpin() {
+        if (!isSpinning) return;
+        cancelAnimationFrame(requestAni);
+        isSpinning = false;
+        startBtn.disabled = false;
+        copyBtn.style.display = "block";
+
+        // 1. 확률에 따라 결과 미리 결정
+        let rand = Math.random() * 100;
+        let cumulativeProb = 0;
+        let selectedIndex = 0;
+
+        for (let i = 0; i < data.length; i++) {
+            cumulativeProb += data[i].prob;
+            if (rand <= cumulativeProb) {
+                selectedIndex = i;
+                break;
+            }
+        }
+        const selected = data[selectedIndex];
+
+        // 2. 결정된 칸이 12시 방향(1.5 * PI)에 오도록 각도 강제 점프
+        const pi2 = Math.PI * 2;
+        let sliceStartAngle = 0;
+        for (let i = 0; i < selectedIndex; i++) {
+            sliceStartAngle += (data[i].prob / 100) * pi2;
+        }
+        const sliceMiddleAngle = sliceStartAngle + ((selected.prob / 100) * pi2) / 2;
+        
+        currentAngle = (1.5 * Math.PI - sliceMiddleAngle) % pi2;
+        if (currentAngle < 0) currentAngle += pi2;
+        
+        draw(); // 강제 이동된 화면 갱신
+
+        // 3. 결과 계산 및 출력
+        const inputG = parseInt(document.getElementById('inputG').value) || 0;
+        const multiplier = Number(selected.val);
+        const resultG = inputG * multiplier;
+        
+        let resClass = '';
+        if (multiplier > 0) resClass = 'win';
+        else if (multiplier < 0) resClass = 'loss';
+
+        resultArea.innerHTML = `
+            <span class="small-text">결과: ${multiplier}배</span>
+            <span class="${resClass}">${resultG.toLocaleString()} G</span>
+        `;
+    }
+
+    async function copyResult() {
+        const area = document.getElementById('capture-area');
+        try {
+            const canvasImg = await html2canvas(area);
+            canvasImg.toBlob(async (blob) => {
+                const item = new ClipboardItem({ "image/png": blob });
+                await navigator.clipboard.write([item]);
+                alert("결과 이미지가 복사되었습니다!");
+            });
+        } catch (err) { alert("복사 실패"); }
+    }
+
+    draw();
+</script>
+
+</body>
+</html>
