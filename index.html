@@ -2,186 +2,270 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Wuthering Heights 룰렛</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wuthering Heights 슬롯 머신</title>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
-        body { font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #f0f2f5; padding: 20px; }
-        .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; position: relative; width: 450px; }
-        #capture-area { background: white; padding: 10px; border-radius: 15px; }
-        .roulette-wrapper { position: relative; width: 412px; margin: 10px auto; }
-        .pin {
-            width: 0; height: 0;
-            border-left: 15px solid transparent; border-right: 15px solid transparent;
-            border-top: 30px solid #e74c3c;
-            position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
-            z-index: 10; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+        :root {
+            --bg-color: #f0f0f0;
+            --card-bg: #ffffff;
+            --border-color: #dddddd;
+            --accent-color: #222222;
+            --text-main: #111111;
+            --text-dim: #999999;
+            --win-color: #2ecc71;
+            --lose-color: #e74c3c;
+            --gold: #d4af37;
         }
-        #canvas { border: 6px solid #333; border-radius: 50%; cursor: pointer; background: white; }
-        .input-group { margin-bottom: 20px; font-size: 1.2rem; }
-        input { padding: 10px; font-size: 1.2rem; width: 140px; border: 2px solid #ddd; border-radius: 8px; text-align: right; }
-        .btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
-        button { padding: 15px 30px; font-size: 1.1rem; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        #startBtn { background-color: #e67e22; color: white; flex: 2; }
-        #copyBtn { background-color: #3498db; color: white; flex: 1; display: none; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-        .result { margin-top: 20px; padding: 20px; border-radius: 12px; background: #1a1a1a; color: white; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
-        .win { color: #00d2ff; font-size: 1.8rem; font-weight: bold; }
-        .loss { color: #ff5252; font-size: 1.8rem; font-weight: bold; }
-        .small-text { font-size: 0.9rem; color: #888; margin-bottom: 5px; }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .info-panel {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 15px;
+            text-align: center;
+            background: rgba(255,255,255,0.6);
+            padding: 6px 15px;
+            border-radius: 50px;
+        }
+
+        /* 게임 카드 (캡처 영역) */
+        .capture-area {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            padding: 40px;
+            text-align: center;
+            width: 360px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+        }
+
+        .reels-container {
+            display: flex;
+            gap: 12px;
+            margin: 10px 0 25px 0;
+            justify-content: center;
+        }
+
+        .reel {
+            width: 90px;
+            height: 120px;
+            background: #ffffff;
+            border: 2px solid #eeeeee;
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.5rem;
+            font-weight: 600;
+            box-shadow: inset 0 5px 10px rgba(0,0,0,0.03);
+        }
+
+        .spinning { animation: reel-spin 0.1s infinite linear; }
+        @keyframes reel-spin {
+            0% { transform: translateY(-2px); filter: blur(2px); }
+            100% { transform: translateY(2px); filter: blur(4px); }
+        }
+
+        .result-box { margin-top: 10px; min-height: 70px; }
+        .multiplier { font-size: 0.95rem; font-weight: 500; margin-bottom: 5px; }
+        .final-g { font-size: 1.7rem; font-weight: 800; letter-spacing: -1px; }
+
+        .bet-control {
+            width: 360px;
+            background: #fff;
+            margin-top: 20px;
+            padding: 24px;
+            border-radius: 25px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-sizing: border-box;
+        }
+
+        .bet-label { font-size: 0.85rem; color: var(--text-dim); font-weight: 600; text-align: left; }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid #f0f0f0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-align: center;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus { border-color: var(--accent-color); }
+
+        /* 하단 버튼 */
+        .controls { width: 360px; margin-top: 15px; display: flex; flex-direction: column; gap: 10px; }
+
+        button {
+            border: none;
+            padding: 18px;
+            border-radius: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #spin-btn { background: var(--accent-color); color: #fff; font-size: 1.1rem; }
+        #spin-btn:disabled { background: #ccc; cursor: not-allowed; }
+        #copy-btn { background: transparent; color: var(--text-dim); font-size: 0.8rem; text-decoration: underline; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>룰렛</h2>
-    <div class="input-group">
-        베팅 G: <input type="number" id="inputG" value="0"> <strong>G</strong>
+    <div class="info-panel">
+        777(x10) | 기호일치(x5) | 폭탄(x-3)
     </div>
-    <div id="capture-area">
-        <div class="roulette-wrapper">
-            <div class="pin"></div>
-            <canvas id="canvas" width="400" height="400" onclick="stopSpin()"></canvas>
+
+    <div id="game-card" class="capture-area">
+        <div class="reels-container">
+            <div class="reel" id="r1">7</div>
+            <div class="reel" id="r2">7</div>
+            <div class="reel" id="r3">7</div>
         </div>
-        <div class="result" id="resultArea">
-            <span class="small-text">준비 완료</span>
-            시작 후 원판을 클릭해 멈추세요!
-        </div>
-    </div>
-    <div class="btn-group">
-        <button id="startBtn" onclick="startSpin()">회전 시작!</button>
-        <button id="copyBtn" onclick="copyResult()">결과 복사</button>
-    </div>
-</div>
-
-<script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const resultArea = document.getElementById('resultArea');
-    const startBtn = document.getElementById('startBtn');
-    const copyBtn = document.getElementById('copyBtn');
-
-    // -10배 다시 추가 (확률 조정)
-    const data = [
-        { val: -10, prob: 5, color: "#222" },
-        { val: -5, prob: 12, color: "#FF6B6B" },
-        { val: -2, prob: 15, color: "#FF9F43" },
-        { val: -1, prob: 18, color: "#FEEAA1" },
-        { val: 0, prob: 10, color: "#DCDDE1" },
-        { val: 1, prob: 23, color: "#26DE81" },
-        { val: 2, prob: 10, color: "#45AAF2" },
-        { val: 5, prob: 5, color: "#A55EEA" },
-        { val: 10, prob: 2, color: "#2BCBBA" }
-    ];
-
-    let currentAngle = 0;
-    let isSpinning = false;
-    let requestAni;
-    let spinSpeed = 0;
-
-    function draw() {
-        ctx.clearRect(0, 0, 400, 400);
-        let startAngle = currentAngle;
-        data.forEach(item => {
-            const sliceAngle = (item.prob / 100) * 2 * Math.PI;
-            ctx.beginPath();
-            ctx.fillStyle = item.color;
-            ctx.moveTo(200, 200);
-            ctx.arc(200, 200, 198, startAngle, startAngle + sliceAngle);
-            ctx.fill();
-            ctx.strokeStyle = "rgba(0,0,0,0.1)";
-            ctx.stroke();
-            ctx.save();
-            ctx.translate(200, 200);
-            ctx.rotate(startAngle + sliceAngle/2);
-            ctx.textAlign = "right";
-            ctx.fillStyle = (item.val === -1 || item.val === 0 || item.val === 1) ? "#333" : "#fff";
-            ctx.font = "bold 18px Arial";
-            ctx.fillText(item.val + "x", 185, 6);
-            ctx.restore();
-            startAngle += sliceAngle;
-        });
-    }
-
-    function rotate() {
-        currentAngle += spinSpeed;
-        draw();
-        requestAni = requestAnimationFrame(rotate);
-    }
-
-    function startSpin() {
-        if (isSpinning) return;
-        isSpinning = true;
-        startBtn.disabled = true;
-        copyBtn.style.display = "none";
-        resultArea.innerHTML = '<span class="small-text">회전 중...</span>원판을 클릭하세요!';
         
-        spinSpeed = 0.7 + Math.random() * 0.3; 
-        rotate();
-    }
+        <div class="result-box">
+            <div id="res-mult" class="multiplier">베팅액 입력 후 돌리세요</div>
+            <div id="res-total" class="final-g">-</div>
+        </div>
+    </div>
 
-    function stopSpin() {
-        if (!isSpinning) return;
-        cancelAnimationFrame(requestAni);
-        isSpinning = false;
-        startBtn.disabled = false;
-        copyBtn.style.display = "block";
+    <div class="bet-control">
+        <div class="bet-label">베팅 G</div>
+        <input type="number" id="bet-input" placeholder="금액 입력" min="1">
+    </div>
 
-        // 1. 확률에 따라 결과 미리 결정
-        let rand = Math.random() * 100;
-        let cumulativeProb = 0;
-        let selectedIndex = 0;
+    <div class="controls">
+        <button id="spin-btn">슬롯 돌리기</button>
+        <button id="copy-btn">결과 화면 복사하기</button>
+    </div>
 
-        for (let i = 0; i < data.length; i++) {
-            cumulativeProb += data[i].prob;
-            if (rand <= cumulativeProb) {
-                selectedIndex = i;
-                break;
+    <script>
+        const symbols = ["7", "♥", "♣", "♠", "💣"];
+        const btnSpin = document.getElementById('spin-btn');
+        const btnCopy = document.getElementById('copy-btn');
+        const betInput = document.getElementById('bet-input');
+        const multText = document.getElementById('res-mult');
+        const totalText = document.getElementById('res-total');
+        const reelEls = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')];
+
+        async function startSpin() {
+            const betAmount = parseInt(betInput.value);
+
+            if (isNaN(betAmount) || betAmount <= 0) {
+                alert("베팅 금액을 입력해주세요.");
+                return;
+            }
+
+            btnSpin.disabled = true;
+            betInput.disabled = true;
+            
+            multText.innerText = "회전 중...";
+            multText.style.color = "#999";
+            totalText.innerText = "-";
+
+            reelEls.forEach(el => el.classList.add('spinning'));
+
+            const rand = Math.random() * 100;
+            let finalResult = [];
+
+            // 확률 로직: 폭탄 10%, 잭팟 5%, 일반 15%, 낙첨 70%
+            if (rand < 5) {
+                finalResult = ["7", "7", "7"];
+            } else if (rand < 15) {
+                finalResult = ["💣", "💣", "💣"];
+            } else if (rand < 30) {
+                const s = symbols[Math.floor(Math.random() * 3) + 1]; 
+                finalResult = [s, s, s];
+            } else {
+                while(true) {
+                    finalResult = [
+                        symbols[Math.floor(Math.random() * symbols.length)],
+                        symbols[Math.floor(Math.random() * symbols.length)],
+                        symbols[Math.floor(Math.random() * symbols.length)]
+                    ];
+                    if (!(finalResult[0] === finalResult[1] && finalResult[1] === finalResult[2])) break;
+                }
+            }
+
+            for (let i = 0; i < reelEls.length; i++) {
+                await new Promise(r => setTimeout(r, 600 + (i * 400)));
+                reelEls[i].classList.remove('spinning');
+                reelEls[i].innerText = finalResult[i];
+            }
+
+            calculateScore(finalResult, betAmount);
+            btnSpin.disabled = false;
+            betInput.disabled = false;
+        }
+
+        function calculateScore(res, betAmount) {
+            const isJackpot = res.every(v => v === "7");
+            const isBomb = res.every(v => v === "💣");
+            const isMatch = res[0] === res[1] && res[1] === res[2];
+
+            let multiplier = 0;
+            let message = "결과: 0배";
+
+            if (isJackpot) {
+                multiplier = 10;
+                message = "결과: 10배";
+                multText.style.color = "var(--gold)";
+            } else if (isBomb) {
+                multiplier = -3;
+                message = "결과: -3배 (폭탄!)";
+                multText.style.color = "var(--lose-color)";
+            } else if (isMatch) {
+                multiplier = 5;
+                message = "결과: 5배";
+                multText.style.color = "var(--win-color)";
+            } else {
+                multText.style.color = "#bbb";
+            }
+
+            // 초기 금액 없이 베팅액 기준으로만 결과 산출
+            const finalResultG = betAmount * multiplier;
+            
+            multText.innerText = message;
+            totalText.innerText = `(최종) ${finalResultG.toLocaleString()} G`;
+        }
+
+        async function copyToClipboard() {
+            const area = document.getElementById('game-card');
+            try {
+                const canvas = await html2canvas(area, { backgroundColor: '#f0f0f0', scale: 2 });
+                canvas.toBlob(async (blob) => {
+                    const item = new ClipboardItem({ "image/png": blob });
+                    await navigator.clipboard.write([item]);
+                    const prevText = btnCopy.innerText;
+                    btnCopy.innerText = "복사 완료!";
+                    setTimeout(() => btnCopy.innerText = prevText, 2000);
+                });
+            } catch (err) {
+                alert("복사 실패");
             }
         }
-        const selected = data[selectedIndex];
 
-        // 2. 결정된 칸이 12시 방향(1.5 * PI)에 오도록 각도 강제 점프
-        const pi2 = Math.PI * 2;
-        let sliceStartAngle = 0;
-        for (let i = 0; i < selectedIndex; i++) {
-            sliceStartAngle += (data[i].prob / 100) * pi2;
-        }
-        const sliceMiddleAngle = sliceStartAngle + ((selected.prob / 100) * pi2) / 2;
-        
-        currentAngle = (1.5 * Math.PI - sliceMiddleAngle) % pi2;
-        if (currentAngle < 0) currentAngle += pi2;
-        
-        draw(); // 강제 이동된 화면 갱신
-
-        // 3. 결과 계산 및 출력
-        const inputG = parseInt(document.getElementById('inputG').value) || 0;
-        const multiplier = Number(selected.val);
-        const resultG = inputG * multiplier;
-        
-        let resClass = '';
-        if (multiplier > 0) resClass = 'win';
-        else if (multiplier < 0) resClass = 'loss';
-
-        resultArea.innerHTML = `
-            <span class="small-text">결과: ${multiplier}배</span>
-            <span class="${resClass}">${resultG.toLocaleString()} G</span>
-        `;
-    }
-
-    async function copyResult() {
-        const area = document.getElementById('capture-area');
-        try {
-            const canvasImg = await html2canvas(area);
-            canvasImg.toBlob(async (blob) => {
-                const item = new ClipboardItem({ "image/png": blob });
-                await navigator.clipboard.write([item]);
-                alert("결과 이미지가 복사되었습니다!");
-            });
-        } catch (err) { alert("복사 실패"); }
-    }
-
-    draw();
-</script>
-
+        btnSpin.addEventListener('click', startSpin);
+        btnCopy.addEventListener('click', copyToClipboard);
+    </script>
 </body>
 </html>
